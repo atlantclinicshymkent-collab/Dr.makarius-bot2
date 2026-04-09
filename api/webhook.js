@@ -1,6 +1,7 @@
 import { handlePhoto } from "../lib/vision.js";
 import { handleCommand } from "../lib/commands.js";
 import { sendMessage } from "../lib/telegram.js";
+import { askMedical } from "../lib/medical.js";
 
 const ALLOWED_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -22,8 +23,15 @@ export default async function handler(req, res) {
   try {
     if (message.photo && message.photo.length > 0) {
       await handlePhoto(message, chatId);
-    } else if (message.text) {
+    }
+    else if (message.text?.startsWith("/")) {
       await handleCommand(message.text, chatId);
+    }
+    else if (message.text) {
+      // Будь-який текст без / → медичний консультант
+      await sendMessage(chatId, "🩺 Аналізую за міжнародними протоколами...");
+      const answer = await askMedical(message.text);
+      await sendMessage(chatId, answer);
     }
   } catch (err) {
     console.error("Webhook error:", err.message || err);
